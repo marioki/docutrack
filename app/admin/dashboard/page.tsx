@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, LogOut, Filter, FileText, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Eye, LogOut, Filter, FileText, Clock, CheckCircle, XCircle, AlertCircle, RefreshCcw } from 'lucide-react';
 
 type Request = {
     id: string;
@@ -83,7 +83,9 @@ export default function AdminDashboard() {
     }
 
     const visible = filter
-        ? requests.filter((r) => r.status === filter)
+        ? filter === 'VALIDATING'
+            ? requests.filter((r) => r.status === 'VALIDATING' || r.status === 'RECEIVED')
+            : requests.filter((r) => r.status === filter)
         : requests;
 
     const stats = {
@@ -160,7 +162,7 @@ export default function AdminDashboard() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 items-center">
                             <Button
                                 onClick={() => setFilter(null)}
                                 variant={filter === null ? "default" : "outline"}
@@ -168,16 +170,34 @@ export default function AdminDashboard() {
                             >
                                 Todos ({requests.length})
                             </Button>
-                            {STATUS_OPTIONS.map((status) => (
-                                <Button
-                                    key={status}
-                                    onClick={() => setFilter(status)}
-                                    variant={filter === status ? "default" : "outline"}
-                                    size="sm"
-                                >
-                                    {status} ({requests.filter(r => r.status === status).length})
-                                </Button>
-                            ))}
+                            <Button
+                                onClick={() => setFilter('VALIDATING')}
+                                variant={filter === 'VALIDATING' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                En revisión ({requests.filter(r => r.status === 'RECEIVED' || r.status === 'VALIDATING').length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('ISSUED')}
+                                variant={filter === 'ISSUED' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Emitidos ({requests.filter(r => r.status === 'ISSUED').length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('REJECTED')}
+                                variant={filter === 'REJECTED' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Rechazados ({requests.filter(r => r.status === 'REJECTED').length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('NEEDS_CORRECTION')}
+                                variant={filter === 'NEEDS_CORRECTION' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Necesita corrección ({requests.filter(r => r.status === 'NEEDS_CORRECTION').length})
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -192,11 +212,56 @@ export default function AdminDashboard() {
 
                 {/* Requests Table */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Solicitudes</CardTitle>
-                        <CardDescription>
-                            {visible.length} solicitud{visible.length !== 1 ? 'es' : ''} encontrada{visible.length !== 1 ? 's' : ''}
-                        </CardDescription>
+                    <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2">
+                            <CardTitle>Solicitudes</CardTitle>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={load}
+                                title="Refrescar"
+                            >
+                                <RefreshCcw className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <Button
+                                onClick={() => setFilter(null)}
+                                variant={filter === null ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Todos ({requests.length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('VALIDATING')}
+                                variant={filter === 'VALIDATING' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                En revisión ({requests.filter(r => r.status === 'RECEIVED' || r.status === 'VALIDATING').length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('ISSUED')}
+                                variant={filter === 'ISSUED' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Emitidos ({requests.filter(r => r.status === 'ISSUED').length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('REJECTED')}
+                                variant={filter === 'REJECTED' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Rechazados ({requests.filter(r => r.status === 'REJECTED').length})
+                            </Button>
+                            <Button
+                                onClick={() => setFilter('NEEDS_CORRECTION')}
+                                variant={filter === 'NEEDS_CORRECTION' ? "default" : "outline"}
+                                size="sm"
+                            >
+                                Necesita corrección ({requests.filter(r => r.status === 'NEEDS_CORRECTION').length})
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">

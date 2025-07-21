@@ -145,7 +145,7 @@ export default function RequestDetails() {
                   onClick={async () => {
                     try {
                       const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
-                      console.log('Download response:', res.status, res.headers.get('content-type'));
+                      console.log('Attachment download response:', res.status, res.headers.get('content-type'));
                       if (res.ok && res.headers.get('content-type')?.includes('application/octet-stream')) {
                         const blob = await res.blob();
                         const url = window.URL.createObjectURL(blob);
@@ -158,11 +158,11 @@ export default function RequestDetails() {
                         document.body.removeChild(a);
                       } else {
                         const text = await res.text();
-                        console.error('Download error:', text);
+                        console.error('Attachment download error:', text);
                         alert('Error al descargar el archivo: ' + text);
                       }
                     } catch (err) {
-                      console.error('Download exception:', err);
+                      console.error('Attachment download exception:', err);
                       alert('Error al descargar el archivo');
                     }
                   }}
@@ -175,14 +175,14 @@ export default function RequestDetails() {
               <Button
                 onClick={async () => {
                   try {
-                    const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
+                    const res = await fetch(`/api/requests/${request.id}/certificate`, { credentials: 'include' });
                     console.log('Cert download response:', res.status, res.headers.get('content-type'));
-                    if (res.ok && res.headers.get('content-type')?.includes('application/octet-stream')) {
+                    if (res.ok && res.headers.get('content-type')?.includes('application/pdf')) {
                       const blob = await res.blob();
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `certificado-${request.id}`;
+                      a.download = `certificado-${request.id}.pdf`;
                       document.body.appendChild(a);
                       a.click();
                       window.URL.revokeObjectURL(url);
