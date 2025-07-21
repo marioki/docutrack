@@ -107,7 +107,7 @@ export default function AuthForm({ mode }: Props) {
                         <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full flex items-center gap-2"
+                            className="w-full flex items-center gap-2 bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
                         >
                             <Icon className="h-4 w-4" />
                             {isSubmitting ? 'Procesando...' : label}

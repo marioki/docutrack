@@ -13,6 +13,7 @@ type Request = {
 };
 
 const STATUS_CONFIG = {
+    RECEIVED: { color: 'bg-blue-100 text-blue-800', icon: Clock, label: 'En revisión' },
     VALIDATING: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'En Validación' },
     ISSUED: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Emitido' },
     REJECTED: { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Rechazado' },
@@ -22,9 +23,14 @@ const STATUS_CONFIG = {
 export default function Dashboard() {
     const [file, setFile] = useState<File | null>(null);
     const [type, setType] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [personalId, setPersonalId] = useState('');
+    const [birthDate, setBirthDate] = useState('');
     const [requests, setRequests] = useState<Request[]>([]);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [userEmail, setUserEmail] = useState('');
 
     async function fetchRequests() {
         const res = await fetch('/api/requests', { credentials: 'include' });
@@ -33,17 +39,38 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchRequests();
+        loadUserEmail();
     }, []);
+
+    async function loadUserEmail() {
+        try {
+            const res = await fetch('/api/auth/me', { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                setUserEmail(data.email);
+            }
+        } catch {
+            // Silently fail, user email is not critical
+        }
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError('');
         if (!file) return setError('Adjunta un archivo');
+        if (!firstName.trim()) return setError('El nombre es requerido');
+        if (!lastName.trim()) return setError('El apellido es requerido');
+        if (!personalId.trim()) return setError('La identificación personal es requerida');
+        if (!birthDate) return setError('La fecha de nacimiento es requerida');
 
         setIsSubmitting(true);
         const body = new FormData();
         body.append('certificate_type', type);
         body.append('attachment', file);
+        body.append('first_name', firstName);
+        body.append('last_name', lastName);
+        body.append('personal_id', personalId);
+        body.append('birth_date', birthDate);
 
         const res = await fetch('/api/requests', {
             method: 'POST',
@@ -54,6 +81,10 @@ export default function Dashboard() {
         if (res.ok) {
             setType('');
             setFile(null);
+            setFirstName('');
+            setLastName('');
+            setPersonalId('');
+            setBirthDate('');
             fetchRequests();
         } else {
             const { error } = await res.json();
@@ -87,6 +118,9 @@ export default function Dashboard() {
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Mis Solicitudes</h1>
                         <p className="text-gray-600">Gestiona tus solicitudes de certificados</p>
+                        {userEmail && (
+                            <p className="text-sm text-gray-500 mt-1">Usuario: {userEmail}</p>
+                        )}
                     </div>
                     <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
                         <LogOut className="h-4 w-4" />
@@ -147,16 +181,68 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Nombre</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Tu nombre"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        required
+                                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Apellido</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Tu apellido"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        required
+                                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Identificación Personal</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Número de identificación"
+                                        value={personalId}
+                                        onChange={(e) => setPersonalId(e.target.value)}
+                                        required
+                                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
+                                    <input
+                                        type="date"
+                                        value={birthDate}
+                                        onChange={(e) => setBirthDate(e.target.value)}
+                                        required
+                                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Tipo de Certificado</label>
-                                <input
-                                    type="text"
-                                    placeholder="Ej: Certificado de estudios, Certificado de trabajo..."
+                                <select
                                     value={type}
                                     onChange={(e) => setType(e.target.value)}
                                     required
                                     className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
+                                >
+                                    <option value="">Selecciona un tipo de certificado</option>
+                                    <option value="Certificado de estudios">Certificado de estudios</option>
+                                    <option value="Certificado de trabajo">Certificado de trabajo</option>
+                                    <option value="Certificado de nacimiento">Certificado de nacimiento</option>
+                                    <option value="Certificado de matrimonio">Certificado de matrimonio</option>
+                                    <option value="Certificado de defunción">Certificado de defunción</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Archivo Adjunto</label>
@@ -210,7 +296,24 @@ export default function Dashboard() {
                                 {requests.map((request) => {
                                     const statusConfig = STATUS_CONFIG[request.status as keyof typeof STATUS_CONFIG];
                                     const StatusIcon = statusConfig?.icon || Clock;
-                                    
+
+                                    async function handleDownload() {
+                                        const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
+                                        if (res.ok) {
+                                            const blob = await res.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `certificado-${request.id}`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            window.URL.revokeObjectURL(url);
+                                            document.body.removeChild(a);
+                                        } else {
+                                            alert('Error al descargar el certificado');
+                                        }
+                                    }
+
                                     return (
                                         <div key={request.id} className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50">
                                             <div className="flex items-center space-x-4">
@@ -232,6 +335,26 @@ export default function Dashboard() {
                                                         })}
                                                     </p>
                                                 </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => window.location.href = `/requests/${request.id}`}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    Ver detalles
+                                                </Button>
+                                                {request.status === 'ISSUED' && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleDownload}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        Descargar certificado
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     );

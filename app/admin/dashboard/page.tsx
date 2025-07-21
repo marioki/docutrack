@@ -33,6 +33,7 @@ export default function AdminDashboard() {
     const [requests, setRequests] = useState<Request[]>([]);
     const [filter, setFilter] = useState<string | null>(null);
     const [error, setError] = useState('');
+    const [userEmail, setUserEmail] = useState('');
 
     async function load() {
         const res = await fetch('/api/admin/requests', { credentials: 'include' });
@@ -45,7 +46,20 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         load();
+        loadUserEmail();
     }, []);
+
+    async function loadUserEmail() {
+        try {
+            const res = await fetch('/api/auth/me', { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                setUserEmail(data.email);
+            }
+        } catch {
+            // Silently fail, user email is not critical
+        }
+    }
 
     async function changeStatus(id: string, status: string) {
         const res = await fetch(`/api/admin/requests/${id}/status`, {
@@ -87,6 +101,9 @@ export default function AdminDashboard() {
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Panel Administrador</h1>
                         <p className="text-gray-600">Gestiona las solicitudes de certificados</p>
+                        {userEmail && (
+                            <p className="text-sm text-gray-500 mt-1">Usuario: {userEmail}</p>
+                        )}
                     </div>
                     <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
                         <LogOut className="h-4 w-4" />
