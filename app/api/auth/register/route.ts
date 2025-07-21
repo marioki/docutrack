@@ -1,20 +1,24 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { supabaseAdmin as db } from '../../../lib/supabase';
 import { signJwt, setAuthCookie } from '../../../lib/auth';
 
+const RegisterSchema = z.object({
+    email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format'),
+    password: z.string().min(6),
+});
+
 export async function POST(req: Request) {
     try {
-        const { email, password } = await req.json();
-        if (!email || !password) {
-            return NextResponse.json({ error: 'Email y password requeridos' }, { status: 400 });
-        }
+        const json = await req.json();
+        const { email, password } = RegisterSchema.parse(json);
 
-        // ¿email duplicado?
         const { count } = await db
             .from('users')
             .select('id', { head: true, count: 'exact' })
             .eq('email', email);
+
         if (count && count > 0) {
             return NextResponse.json({ error: 'Usuario ya existe' }, { status: 409 });
         }
@@ -30,6 +34,7 @@ export async function POST(req: Request) {
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
+
         if (!data) {
             return NextResponse.json(
                 { error: 'Insert succeeded but RLS prevented returning row' },
@@ -41,6 +46,9 @@ export async function POST(req: Request) {
         setAuthCookie(token);
         return NextResponse.json({ id: data.id, email }, { status: 201 });
     } catch (e: any) {
+        if (e instanceof z.ZodError) {
+            return NextResponse.json({ error: 'Datos inválidos', details: e.issues }, { status: 400 });
+        }
         console.error('register error:', e);
         return NextResponse.json({ error: e.message ?? 'unknown' }, { status: 500 });
     }
