@@ -24,9 +24,10 @@ export async function GET(
     if (!request.attachment_url) return NextResponse.json({ error: 'No attachment found' }, { status: 404 });
 
     // Download the file from Supabase Storage
+    const storagePath = request.attachment_url.replace(/^attachments\//, '').replace(/^attachments\//, '');
     const { data: fileData, error: downloadError } = await db.storage
         .from('attachments')
-        .download(request.attachment_url);
+        .download(storagePath);
 
     if (downloadError || !fileData)
         return NextResponse.json({ error: 'File not found' }, { status: 404 });

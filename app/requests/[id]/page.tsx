@@ -143,18 +143,26 @@ export default function RequestDetails() {
                   variant="outline"
                   size="sm"
                   onClick={async () => {
-                    const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
-                    if (res.ok) {
-                      const blob = await res.blob();
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = request.attachment_url?.split('/').pop() || 'archivo';
-                      document.body.appendChild(a);
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                      document.body.removeChild(a);
-                    } else {
+                    try {
+                      const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
+                      console.log('Download response:', res.status, res.headers.get('content-type'));
+                      if (res.ok && res.headers.get('content-type')?.includes('application/octet-stream')) {
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = request.attachment_url?.split('/').pop() || 'archivo';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                      } else {
+                        const text = await res.text();
+                        console.error('Download error:', text);
+                        alert('Error al descargar el archivo: ' + text);
+                      }
+                    } catch (err) {
+                      console.error('Download exception:', err);
                       alert('Error al descargar el archivo');
                     }
                   }}
@@ -165,7 +173,30 @@ export default function RequestDetails() {
             </div>
             {request.status === 'ISSUED' && (
               <Button
-                onClick={handleDownload}
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
+                    console.log('Cert download response:', res.status, res.headers.get('content-type'));
+                    if (res.ok && res.headers.get('content-type')?.includes('application/octet-stream')) {
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `certificado-${request.id}`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    } else {
+                      const text = await res.text();
+                      console.error('Cert download error:', text);
+                      alert('Error al descargar el certificado: ' + text);
+                    }
+                  } catch (err) {
+                    console.error('Cert download exception:', err);
+                    alert('Error al descargar el certificado');
+                  }
+                }}
                 className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 w-full mt-4"
               >
                 <Download className="h-4 w-4" /> Descargar certificado
