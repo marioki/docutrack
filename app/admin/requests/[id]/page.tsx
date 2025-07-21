@@ -77,18 +77,16 @@ export default function RequestDetails() {
 
     async function downloadAttachment() {
         if (!request?.attachment_url) return;
-        
         try {
             const res = await fetch(`/api/admin/requests/${request.id}/download`, {
                 credentials: 'include'
             });
-            
             if (res.ok) {
                 const blob = await res.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `attachment-${request.id}`;
+                a.download = request.attachment_url.split('/').pop() || 'archivo';
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -174,10 +172,10 @@ export default function RequestDetails() {
                                 {statusConfig?.label}
                             </div>
                             <Select onValueChange={changeStatus} value={request.status}>
-                                <SelectTrigger className="w-48">
+                                <SelectTrigger className="w-48 bg-white">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-white">
                                     {STATUS_OPTIONS.map((status) => (
                                         <SelectItem key={status} value={status}>
                                             {STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]?.label || status}
