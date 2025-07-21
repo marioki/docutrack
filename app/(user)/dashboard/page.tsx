@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Upload, LogOut, FileText, Clock, CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
 
 type Request = {
     id: string;
@@ -9,11 +12,19 @@ type Request = {
     created_at: string;
 };
 
+const STATUS_CONFIG = {
+    VALIDATING: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'En Validación' },
+    ISSUED: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Emitido' },
+    REJECTED: { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Rechazado' },
+    NEEDS_CORRECTION: { color: 'bg-orange-100 text-orange-800', icon: AlertCircle, label: 'Necesita Corrección' },
+};
+
 export default function Dashboard() {
     const [file, setFile] = useState<File | null>(null);
     const [type, setType] = useState('');
     const [requests, setRequests] = useState<Request[]>([]);
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     async function fetchRequests() {
         const res = await fetch('/api/requests', { credentials: 'include' });
@@ -29,6 +40,7 @@ export default function Dashboard() {
         setError('');
         if (!file) return setError('Adjunta un archivo');
 
+        setIsSubmitting(true);
         const body = new FormData();
         body.append('certificate_type', type);
         body.append('attachment', file);
@@ -47,6 +59,7 @@ export default function Dashboard() {
             const { error } = await res.json();
             setError(error);
         }
+        setIsSubmitting(false);
     }
 
     async function handleLogout() {
@@ -59,65 +72,175 @@ export default function Dashboard() {
         }
     }
 
+    const stats = {
+        total: requests.length,
+        validating: requests.filter(r => r.status === 'VALIDATING').length,
+        issued: requests.filter(r => r.status === 'ISSUED').length,
+        rejected: requests.filter(r => r.status === 'REJECTED').length,
+    };
+
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold">Tus solicitudes</h1>
-                <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                >
-                    Cerrar sesión
-                </button>
+        <div className="min-h-screen bg-gray-50 p-6">
+            <div className="mx-auto max-w-7xl space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Mis Solicitudes</h1>
+                        <p className="text-gray-600">Gestiona tus solicitudes de certificados</p>
+                    </div>
+                    <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
+                        <LogOut className="h-4 w-4" />
+                        Cerrar sesión
+                    </Button>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Solicitudes</CardTitle>
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.total}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">En Validación</CardTitle>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-yellow-600">{stats.validating}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Emitidos</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-600">{stats.issued}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Rechazados</CardTitle>
+                            <XCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* New Request Form */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Plus className="h-5 w-5" />
+                            Nueva Solicitud
+                        </CardTitle>
+                        <CardDescription>
+                            Envía una nueva solicitud de certificado
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Tipo de Certificado</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Certificado de estudios, Certificado de trabajo..."
+                                    value={type}
+                                    onChange={(e) => setType(e.target.value)}
+                                    required
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Archivo Adjunto</label>
+                                <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                    required
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Formatos permitidos: PDF, JPG, JPEG, PNG
+                                </p>
+                            </div>
+                            {error && (
+                                <div className="rounded-md bg-red-50 p-3">
+                                    <p className="text-sm text-red-700">{error}</p>
+                                </div>
+                            )}
+                            <Button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="flex items-center gap-2"
+                            >
+                                <Upload className="h-4 w-4" />
+                                {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                {/* Requests List */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Mis Solicitudes</CardTitle>
+                        <CardDescription>
+                            {requests.length} solicitud{requests.length !== 1 ? 'es' : ''} en total
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {requests.length === 0 ? (
+                            <div className="text-center py-8">
+                                <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                                <h3 className="mt-2 text-sm font-medium text-gray-900">No hay solicitudes</h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Comienza creando tu primera solicitud de certificado.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {requests.map((request) => {
+                                    const statusConfig = STATUS_CONFIG[request.status as keyof typeof STATUS_CONFIG];
+                                    const StatusIcon = statusConfig?.icon || Clock;
+                                    
+                                    return (
+                                        <div key={request.id} className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="flex-shrink-0">
+                                                    <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusConfig?.color}`}>
+                                                        <StatusIcon className="mr-1 h-3 w-3" />
+                                                        {statusConfig?.label}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">{request.certificate_type}</p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {new Date(request.created_at).toLocaleDateString('es-ES', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-
-            <form
-                onSubmit={handleSubmit}
-                className="rounded-lg bg-white p-4 shadow space-y-4 max-w-md"
-            >
-                <input
-                    type="text"
-                    placeholder="Tipo de certificado"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    required
-                    className="w-full rounded border p-2"
-                />
-                <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    required
-                    className="w-full"
-                />
-                {error && (
-                    <p className="rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>
-                )}
-                <button className="w-full rounded bg-blue-600 p-2 text-white">
-                    Enviar solicitud
-                </button>
-            </form>
-
-            <table className="w-full bg-white rounded shadow">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="p-2 text-left">Tipo</th>
-                        <th className="p-2 text-left">Estado</th>
-                        <th className="p-2 text-left">Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {requests.map((r) => (
-                        <tr key={r.id} className="border-t">
-                            <td className="p-2">{r.certificate_type}</td>
-                            <td className="p-2">{r.status}</td>
-                            <td className="p-2">
-                                {new Date(r.created_at).toLocaleDateString()}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
         </div>
     );
 }
