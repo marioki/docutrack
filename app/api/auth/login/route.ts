@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { supabaseAdmin as db } from '../../../lib/supabase';
-import { signJwt, setAuthCookie } from '../../../lib/auth';
+import { signJwt, jsonWithAuthCookie } from '../../../lib/auth';
 
 export async function POST(req: Request) {
     const { email, password } = await req.json();
@@ -22,7 +22,5 @@ export async function POST(req: Request) {
     }
 
     const token = signJwt({ id: user.id, role: user.role as 'USER' | 'ADMIN' });
-    setAuthCookie(token);
-
-    return NextResponse.json({ id: user.id, email });
+    return jsonWithAuthCookie({ id: user.id, email }, token);
 }
