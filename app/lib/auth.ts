@@ -41,7 +41,8 @@ export async function clearAuthCookie() {
 
 
 // Devuelve una respuesta con cookie seteada
-export function jsonWithAuthCookie(data: any, token: string, status = 200) {
+export function jsonWithAuthCookie(data: Record<string, unknown>,
+    token: string, status = 200) {
     const res = NextResponse.json(data, { status });
     res.cookies.set({
         name: 'token',
