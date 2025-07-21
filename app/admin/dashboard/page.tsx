@@ -238,10 +238,10 @@ export default function AdminDashboard() {
                                                 Ver detalles
                                             </Button>
                                             <Select onValueChange={(value) => changeStatus(request.id, value)}>
-                                                <SelectTrigger className="w-32">
+                                                <SelectTrigger className="w-32 bg-white">
                                                     <SelectValue placeholder="Estado" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="bg-white">
                                                     {STATUS_OPTIONS.map((status) => (
                                                         <SelectItem key={status} value={status}>
                                                             {status}
