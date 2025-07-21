@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { supabaseAdmin as db } from '../../../lib/supabase';
-import { signJwt, setAuthCookie } from '../../../lib/auth';
+import { signJwt, jsonWithAuthCookie } from '../../../lib/auth';
 
 const RegisterSchema = z.object({
     email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format'),
@@ -43,8 +43,8 @@ export async function POST(req: Request) {
         }
 
         const token = signJwt({ id: data.id, role: 'USER' });
-        setAuthCookie(token);
-        return NextResponse.json({ id: data.id, email }, { status: 201 });
+        return jsonWithAuthCookie({ id: data.id, email }, token, 201);
+
     } catch (e: unknown) {
         if (e instanceof z.ZodError) {
             return NextResponse.json({ error: 'Datos inválidos', details: e.issues }, { status: 400 });

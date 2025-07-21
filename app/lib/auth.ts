@@ -1,6 +1,7 @@
 // lib/auth.ts
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 const JWT_SECRET = process.env.SUPABASE_JWT_SECRET!;
 
@@ -36,4 +37,20 @@ export async function setAuthCookie(token: string) {
 // Borrar cookie
 export async function clearAuthCookie() {
     (await cookies()).set('token', '', { path: '/', maxAge: 0 });
+}
+
+
+// Devuelve una respuesta con cookie seteada
+export function jsonWithAuthCookie(data: Record<string, unknown>,
+    token: string, status = 200) {
+    const res = NextResponse.json(data, { status });
+    res.cookies.set({
+        name: 'token',
+        value: token,
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 15,
+    });
+    return res;
 }
