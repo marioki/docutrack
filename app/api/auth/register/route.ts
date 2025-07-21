@@ -45,11 +45,14 @@ export async function POST(req: Request) {
         const token = signJwt({ id: data.id, role: 'USER' });
         setAuthCookie(token);
         return NextResponse.json({ id: data.id, email }, { status: 201 });
-    } catch (e: any) {
+    } catch (e: unknown) {
         if (e instanceof z.ZodError) {
             return NextResponse.json({ error: 'Datos inválidos', details: e.issues }, { status: 400 });
         }
+
         console.error('register error:', e);
-        return NextResponse.json({ error: e.message ?? 'unknown' }, { status: 500 });
+        const message = e instanceof Error ? e.message : 'unknown';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
+
 }
