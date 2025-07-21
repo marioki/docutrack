@@ -10,9 +10,13 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const type = form.get('certificate_type') as string;
     const file = form.get('attachment') as File | null;
+    const firstName = form.get('first_name') as string;
+    const lastName = form.get('last_name') as string;
+    const personalId = form.get('personal_id') as string;
+    const birthDate = form.get('birth_date') as string;
 
-    if (!type || !file)
-        return NextResponse.json({ error: 'Faltan campos' }, { status: 400 });
+    if (!type || !file || !firstName || !lastName || !personalId || !birthDate)
+        return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
 
     const arrayBuffer = await file.arrayBuffer();
     const path = `user-${payload.id}/${Date.now()}-${file.name}`;
@@ -31,6 +35,10 @@ export async function POST(req: Request) {
             certificate_type: type,
             status: 'RECEIVED',
             attachment_url: `attachments/${path}`,
+            first_name: firstName,
+            last_name: lastName,
+            personal_id: personalId,
+            birth_date: birthDate,
         })
         .select('id, status')
         .single();
