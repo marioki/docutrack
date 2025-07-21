@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  env: {
+    SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

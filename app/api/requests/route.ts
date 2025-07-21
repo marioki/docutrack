@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
     const token = req.headers.get('cookie')?.match(/token=([^;]+);?/i)?.[1];
-    const payload = token && verifyJwt(token);
+    const payload = token ? await verifyJwt(token) : null;
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const form = await req.formData();
@@ -42,13 +42,11 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-    // Leer token de la cookie
     const token = req.headers.get('cookie')?.match(/token=([^;]+);?/i)?.[1];
-    const payload = token && verifyJwt(token);
+    const payload = token ? await verifyJwt(token) : null;
     if (!payload)
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Obtener solicitudes del usuario
     const { data, error } = await db
         .from('requests')
         .select('id, certificate_type, status, created_at')

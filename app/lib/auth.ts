@@ -1,5 +1,4 @@
-// lib/auth.ts
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -8,23 +7,28 @@ const JWT_SECRET = process.env.SUPABASE_JWT_SECRET!;
 export interface JwtPayload {
     id: string;
     role: 'USER' | 'ADMIN';
+    [key: string]: any;
 }
 
-// Firmar token 15 min
-export function signJwt(payload: JwtPayload) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+export async function signJwt(payload: JwtPayload) {
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const token = await new jose.SignJWT(payload)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime('15m')
+        .sign(secret);
+    return token;
 }
 
-// Leer token
-export function verifyJwt(token: string) {
+export async function verifyJwt(token: string) {
     try {
-        return jwt.verify(token, JWT_SECRET) as JwtPayload;
-    } catch {
+        const secret = new TextEncoder().encode(JWT_SECRET);
+        const { payload } = await jose.jwtVerify(token, secret);
+        return payload as JwtPayload;
+    } catch (error) {
         return null;
     }
 }
 
-// Escribir cookie HttpOnly
 export async function setAuthCookie(token: string) {
     (await cookies()).set('token', token, {
         httpOnly: true,
@@ -34,13 +38,10 @@ export async function setAuthCookie(token: string) {
     });
 }
 
-// Borrar cookie
 export async function clearAuthCookie() {
     (await cookies()).set('token', '', { path: '/', maxAge: 0 });
 }
 
-
-// Devuelve una respuesta con cookie seteada
 export function jsonWithAuthCookie(data: Record<string, unknown>,
     token: string, status = 200) {
     const res = NextResponse.json(data, { status });
