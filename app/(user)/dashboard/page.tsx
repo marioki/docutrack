@@ -296,7 +296,24 @@ export default function Dashboard() {
                                 {requests.map((request) => {
                                     const statusConfig = STATUS_CONFIG[request.status as keyof typeof STATUS_CONFIG];
                                     const StatusIcon = statusConfig?.icon || Clock;
-                                    
+
+                                    async function handleDownload() {
+                                        const res = await fetch(`/api/requests/${request.id}/download`, { credentials: 'include' });
+                                        if (res.ok) {
+                                            const blob = await res.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `certificado-${request.id}`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            window.URL.revokeObjectURL(url);
+                                            document.body.removeChild(a);
+                                        } else {
+                                            alert('Error al descargar el certificado');
+                                        }
+                                    }
+
                                     return (
                                         <div key={request.id} className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50">
                                             <div className="flex items-center space-x-4">
@@ -318,6 +335,26 @@ export default function Dashboard() {
                                                         })}
                                                     </p>
                                                 </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => window.location.href = `/requests/${request.id}`}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    Ver detalles
+                                                </Button>
+                                                {request.status === 'ISSUED' && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleDownload}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        Descargar certificado
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     );
