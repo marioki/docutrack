@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.SUPABASE_JWT_SECRET!;
 export interface JwtPayload {
     id: string;
     role: 'USER' | 'ADMIN';
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export async function signJwt(payload: JwtPayload) {
@@ -24,7 +24,7 @@ export async function verifyJwt(token: string) {
         const secret = new TextEncoder().encode(JWT_SECRET);
         const { payload } = await jose.jwtVerify(token, secret);
         return payload as JwtPayload;
-    } catch (error) {
+    } catch {
         return null;
     }
 }

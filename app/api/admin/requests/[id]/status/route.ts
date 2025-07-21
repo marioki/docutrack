@@ -4,8 +4,9 @@ import { verifyJwt } from '../../../../../lib/auth';
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const token = req.headers.get('cookie')?.match(/token=([^;]+);?/i)?.[1];
     const payload = token ? await verifyJwt(token) : null;
     if (!payload || payload.role !== 'ADMIN')
@@ -24,7 +25,7 @@ export async function PATCH(
     const { data, error } = await db
         .from('requests')
         .update({ status })
-        .eq('id', params.id)
+        .eq('id', id)
         .select('id, status')
         .single();
 
