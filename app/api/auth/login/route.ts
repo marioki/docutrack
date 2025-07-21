@@ -1,3 +1,4 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { supabaseAdmin as db } from '../../../lib/supabase';
@@ -12,15 +13,16 @@ export async function POST(req: Request) {
         .eq('email', email)
         .single();
 
-    if (error || !user) {
+    if (error || !user)
         return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
-    }
 
     const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) {
+    if (!ok)
         return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
-    }
 
-    const token = signJwt({ id: user.id, role: user.role as 'USER' | 'ADMIN' });
-    return jsonWithAuthCookie({ id: user.id, email }, token);
+    const token = await signJwt({ id: user.id, role: user.role as 'USER' | 'ADMIN' });
+    return jsonWithAuthCookie(
+        { id: user.id, email, role: user.role },
+        token
+    );
 }

@@ -42,8 +42,8 @@ export async function POST(req: Request) {
             );
         }
 
-        const token = signJwt({ id: data.id, role: 'USER' });
-        return jsonWithAuthCookie({ id: data.id, email }, token, 201);
+        const token = await signJwt({ id: data.id, role: 'USER' });
+        return jsonWithAuthCookie({ id: data.id, email, role: data.role }, token);
 
     } catch (e: unknown) {
         if (e instanceof z.ZodError) {

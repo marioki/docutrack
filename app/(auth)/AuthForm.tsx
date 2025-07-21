@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 type Props = {
     mode: 'login' | 'register';
 };
 
 export default function AuthForm({ mode }: Props) {
-    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -18,19 +16,37 @@ export default function AuthForm({ mode }: Props) {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError('');
+        console.log('🔸 Enviando fetch…');
+
         const res = await fetch(`/api/auth/${mode}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
-            credentials: 'include',
+            credentials: 'include', // necesario para recibir la cookie
         });
-        if (res.ok) {
-            router.push('/dashboard');
-            router.refresh();
-        } else {
-            const { error } = await res.json();
+
+        console.log('🔹 res.ok =', res.ok, ' status =', res.status);
+
+        if (!res.ok) {
+            const { error } = await res.json().catch(() => ({ error: 'Sin cuerpo' }));
+            console.log('🔻 Error JSON:', error);
             setError(error ?? 'Algo salió mal');
+            return;
         }
+
+        const data = await res.json().catch(() => null);
+        console.log('🔸 data =', data);
+
+        if (!data) return;
+
+        // Espera breve para que el navegador persista la cookie antes de navegar
+        await new Promise((r) => setTimeout(r, 100));
+
+        const target =
+            data.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
+
+        console.log('🔸 Redirigiendo a', target);
+        window.location.href = target;          // redirección completa
     }
 
     return (
@@ -39,9 +55,11 @@ export default function AuthForm({ mode }: Props) {
             className="mx-auto max-w-sm space-y-4 rounded-lg bg-white p-6 shadow"
         >
             <h1 className="text-2xl font-semibold text-center">{label}</h1>
+
             {error && (
                 <p className="rounded bg-red-100 p-2 text-sm text-red-700">{error}</p>
             )}
+
             <input
                 type="email"
                 placeholder="Correo"
@@ -50,6 +68,7 @@ export default function AuthForm({ mode }: Props) {
                 required
                 className="w-full rounded border p-2"
             />
+
             <input
                 type="password"
                 placeholder="Contraseña"
@@ -58,12 +77,14 @@ export default function AuthForm({ mode }: Props) {
                 required
                 className="w-full rounded border p-2"
             />
+
             <button
                 type="submit"
                 className="w-full rounded bg-blue-600 p-2 font-medium text-white hover:bg-blue-700"
             >
                 {label}
             </button>
+
             {mode === 'login' ? (
                 <p className="text-center text-sm">
                     ¿Sin cuenta?{' '}
