@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, LogOut, FileText, Clock, CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
+import { Upload, LogOut, FileText, Clock, CheckCircle, XCircle, AlertCircle, Plus, RefreshCcw } from 'lucide-react';
 
 type Request = {
     id: string;
@@ -115,12 +115,8 @@ export default function Dashboard() {
             <div className="mx-auto max-w-7xl space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex items-center gap-2">
                         <h1 className="text-3xl font-bold text-gray-900">Mis Solicitudes</h1>
-                        <p className="text-gray-600">Gestiona tus solicitudes de certificados</p>
-                        {userEmail && (
-                            <p className="text-sm text-gray-500 mt-1">Usuario: {userEmail}</p>
-                        )}
                     </div>
                     <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
                         <LogOut className="h-4 w-4" />
@@ -276,8 +272,19 @@ export default function Dashboard() {
 
                 {/* Requests List */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Mis Solicitudes</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <CardTitle>Mis Solicitudes</CardTitle>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={fetchRequests}
+                                title="Refrescar"
+                            >
+                                <RefreshCcw className="h-4 w-4" />
+                            </Button>
+                        </div>
                         <CardDescription>
                             {requests.length} solicitud{requests.length !== 1 ? 'es' : ''} en total
                         </CardDescription>
@@ -349,7 +356,27 @@ export default function Dashboard() {
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={handleDownload}
+                                                        onClick={async () => {
+                                                            try {
+                                                                const res = await fetch(`/api/requests/${request.id}/certificate`, { credentials: 'include' });
+                                                                if (res.ok && res.headers.get('content-type')?.includes('application/pdf')) {
+                                                                    const blob = await res.blob();
+                                                                    const url = window.URL.createObjectURL(blob);
+                                                                    const a = document.createElement('a');
+                                                                    a.href = url;
+                                                                    a.download = `certificado-${request.id}.pdf`;
+                                                                    document.body.appendChild(a);
+                                                                    a.click();
+                                                                    window.URL.revokeObjectURL(url);
+                                                                    document.body.removeChild(a);
+                                                                } else {
+                                                                    const text = await res.text();
+                                                                    alert('Error al descargar el certificado: ' + text);
+                                                                }
+                                                            } catch (err) {
+                                                                alert('Error al descargar el certificado');
+                                                            }
+                                                        }}
                                                         className="flex items-center gap-2"
                                                     >
                                                         Descargar certificado
