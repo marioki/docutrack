@@ -30,6 +30,14 @@ const STATUS_CONFIG = {
     NEEDS_CORRECTION: { color: 'bg-orange-100 text-orange-800', icon: AlertCircle, label: 'Necesita Corrección' },
 };
 
+const STATUS_LABELS: Record<string, string> = {
+    RECEIVED: 'En revisión',
+    VALIDATING: 'En validación',
+    ISSUED: 'Emitido',
+    REJECTED: 'Rechazado',
+    NEEDS_CORRECTION: 'Necesita corrección',
+};
+
 export default function RequestDetails() {
     const params = useParams();
     const router = useRouter();
@@ -169,7 +177,7 @@ export default function RequestDetails() {
                         <div className="flex items-center justify-between">
                             <div className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${statusConfig?.color}`}>
                                 <StatusIcon className="mr-2 h-4 w-4" />
-                                {statusConfig?.label}
+                                {STATUS_LABELS[request.status] || request.status}
                             </div>
                             <Select onValueChange={changeStatus} value={request.status}>
                                 <SelectTrigger className="w-48 bg-white">
@@ -178,7 +186,7 @@ export default function RequestDetails() {
                                 <SelectContent className="bg-white">
                                     {STATUS_OPTIONS.map((status) => (
                                         <SelectItem key={status} value={status}>
-                                            {STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]?.label || status}
+                                            {STATUS_LABELS[status] || status}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

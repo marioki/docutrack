@@ -29,6 +29,14 @@ const STATUS_CONFIG = {
     NEEDS_CORRECTION: { color: 'bg-orange-100 text-orange-800', icon: AlertCircle },
 };
 
+const STATUS_LABELS: Record<string, string> = {
+    RECEIVED: 'En revisión',
+    VALIDATING: 'En validación',
+    ISSUED: 'Emitido',
+    REJECTED: 'Rechazado',
+    NEEDS_CORRECTION: 'Necesita corrección',
+};
+
 export default function AdminDashboard() {
     const [requests, setRequests] = useState<Request[]>([]);
     const [filter, setFilter] = useState<string | null>(null);
@@ -275,7 +283,7 @@ export default function AdminDashboard() {
                                             <div className="flex-shrink-0">
                                                 <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusConfig?.color}`}>
                                                     <StatusIcon className="mr-1 h-3 w-3" />
-                                                    {request.status}
+                                                    {STATUS_LABELS[request.status] || request.status}
                                                 </div>
                                             </div>
                                             <div>
@@ -302,14 +310,14 @@ export default function AdminDashboard() {
                                                 <Eye className="h-4 w-4" />
                                                 Ver detalles
                                             </Button>
-                                            <Select onValueChange={(value) => changeStatus(request.id, value)}>
+                                            <Select value={request.status} onValueChange={(value) => changeStatus(request.id, value)}>
                                                 <SelectTrigger className="w-32 bg-white">
-                                                    <SelectValue placeholder="Estado" />
+                                                    <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent className="bg-white">
                                                     {STATUS_OPTIONS.map((status) => (
                                                         <SelectItem key={status} value={status}>
-                                                            {status}
+                                                            {STATUS_LABELS[status] || status}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
